@@ -51,3 +51,78 @@ blockchain.addBlock("I am third");
 blockchain.addBlock("I am fourth");
 
 console.log(blockchain.getBlocks());
+
+function Emoji() {
+  return function (target: any, key: string | symbol) {
+    let val = target[key];
+    const getter = () => {
+      return val;
+    };
+    const setter = (next: any) => {
+      val = `sdf${next}sdf`;
+    };
+    Object.defineProperty(target, key, {
+      get: getter,
+      set: setter,
+      enumerable: true,
+      configurable: true,
+    });
+  };
+}
+
+function Confirmable(message: string) {
+  return function (
+    target: any,
+    key: string | symbol,
+    descriptor: PropertyDescriptor
+  ) {
+    const original = descriptor.value;
+    descriptor.value = function (...args: any[]) {
+      const allow = confirm(message);
+      if (allow) {
+        const result = original.apply(this, args);
+        return result;
+      } else {
+        return null;
+      }
+    };
+  };
+}
+
+function WithTax(rate: number) {
+  return function (
+    target: any,
+    key: string | symbol,
+    descriptor: PropertyDescriptor
+  ) {
+    const original = descriptor.get;
+    descriptor.get = function () {
+      const result = original?.apply(this);
+      return (result * (1 + rate)).toFixed(2);
+    };
+    return descriptor;
+  };
+}
+
+class IceCream {
+  @Emoji()
+  flavor = "vanila";
+
+  toppings: any[] = [];
+
+  @Confirmable("You sure?")
+  addTopping(topping = "sprinks") {
+    this.toppings.push(topping);
+  }
+
+  @WithTax(0.15)
+  get price() {
+    return 5.0 + 0.25 * this.toppings.length;
+  }
+}
+
+const ice = new IceCream();
+console.log(ice.flavor);
+ice.flavor = "squirrel";
+console.log(ice.flavor);
+console.log(ice.price);
